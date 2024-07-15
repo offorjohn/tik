@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload TikTok Video</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 400px;
+        }
+        .container h2 {
+            margin-top: 0;
+        }
+        .container form {
+            display: flex;
+            flex-direction: column;
+        }
+        .container form input {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .container form button {
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .container form button:disabled {
+            background-color: #ccc;
+        }
+        .spinner {
+            display: none;
+            margin: 20px auto;
+        }
+        .spinner div {
+            width: 18px;
+            height: 18px;
+            background-color: #007bff;
+            border-radius: 100%;
+            display: inline-block;
+            -webkit-animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+            animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+        }
+        .spinner .bounce1 {
+            -webkit-animation-delay: -0.32s;
+            animation-delay: -0.32s;
+        }
+        .spinner .bounce2 {
+            -webkit-animation-delay: -0.16s;
+            animation-delay: -0.16s;
+        }
+        @-webkit-keyframes sk-bouncedelay {
+            0%, 80%, 100% { -webkit-transform: scale(0) }
+            40% { -webkit-transform: scale(1.0) }
+        }
+        @keyframes sk-bouncedelay {
+            0%, 80%, 100% { 
+                transform: scale(0);
+                -webkit-transform: scale(0);
+            } 40% { 
+                transform: scale(1.0);
+                -webkit-transform: scale(1.0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Upload TikTok Video</h2>
+        <form id="uploadForm">
+            <label for="tiktokUrl">TikTok Video URL:</label>
+            <input type="url" id="tiktokUrl" name="tiktokUrl" required>
+            <button type="submit">Upload</button>
+        </form>
+        <div class="spinner" id="spinner">
+            <div class="bounce1"></div>
+            <div class="bounce2"></div>
+            <div class="bounce3"></div>
+        </div>
+        <div id="videoContainer"></div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const tiktokUrl = document.getElementById('tiktokUrl').value;
+            if (!tiktokUrl) {
+                alert('Please enter a valid TikTok video URL');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('tiktokUrl', tiktokUrl);
+
+            const spinner = document.getElementById('spinner');
+            spinner.style.display = 'block';
+            document.querySelector('button').disabled = true;
+
+            fetch('upload.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                spinner.style.display = 'none';
+                document.querySelector('button').disabled = false;
+
+                if (data.success) {
+                    alert('TikTok video uploaded successfully');
+                    displayVideo(data.url);
+                } else {
+                    alert('Failed to upload TikTok video: ' + data.message);
+                }
+            })
+            .catch(error => {
+                spinner.style.display = 'none';
+                document.querySelector('button').disabled = false;
+
+                console.error('Error:', error);
+                alert('An error occurred while uploading the TikTok video');
+            });
+        });
+
+        function displayVideo(url) {
+            const videoContainer = document.getElementById('videoContainer');
+            videoContainer.innerHTML = `
+                <blockquote class="tiktok-embed" cite="${url}" data-video-id="${getTikTokVideoId(url)}" style="width: 325px; height: 582px;">
+                    <section> </section>
+                </blockquote>
+            `;
+            loadTikTokEmbedScript();
+        }
+
+        function getTikTokVideoId(url) {
+            const urlParts = url.split('/');
+            return urlParts[urlParts.length - 1];
+        }
+
+        function loadTikTokEmbedScript() {
+            const script = document.createElement('script');
+            script.src = 'https://www.tiktok.com/embed.js';
+            script.async = true;
+            document.body.appendChild(script);
+        }
+    </script>
+</body>
+</html>
